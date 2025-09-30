@@ -52,6 +52,8 @@ router.post("/", async (request: Request, response: Response) => {
   } catch (err) {
     console.log(err);
   }
+
+  response.status(201).end();
 });
 
 export default router;

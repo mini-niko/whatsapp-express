@@ -4,8 +4,14 @@ import fs from "fs";
 import { LocalAuth, Client, type Client as WppClient } from "whatsapp-web.js";
 import { WhatsappEvent } from "./type";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const client: WppClient = new Client({
   authStrategy: new LocalAuth(),
+  puppeteer: {
+    headless: true,
+    args: isProd ? ["--no-sandbox", "--disable-setuid-sandbox"] : [],
+  },
 });
 
 async function setup() {
