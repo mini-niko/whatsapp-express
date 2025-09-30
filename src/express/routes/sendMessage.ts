@@ -1,8 +1,10 @@
 import { Request, Response, Router, text } from "express";
 import { WhatsappClient } from "../../whatsapp/type";
 import { MessageMedia } from "whatsapp-web.js";
+import multer from "multer";
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 type PostBody = {
   chat_id: string;
@@ -16,44 +18,57 @@ type PostBody = {
   };
 };
 
-router.post("/", async (request: Request, response: Response) => {
-  const client: WhatsappClient = request.app.locals.whatsappClient;
-  const body: PostBody = request.body;
+router.post(
+  "/",
+  upload.single("attachment"),
+  async (request: Request, response: Response) => {
+    const client: WhatsappClient = request.app.locals.whatsappClient;
 
-  if (!body?.message?.media && !body?.message?.text)
-    return response.status(400).end();
-
-  try {
-    if (body.message.text && !body.message.media) {
-      await client.sendMessage(body.chat_id, body.message.text);
+    let body;
+    try {
+      body = JSON.parse(request.body.payload);
+    } catch (err) {
+      return response.status(400).json({ error: "Payload inválido" });
     }
 
-    if (!body.message.text && body.message.media) {
-      const media = new MessageMedia(
-        body.message.media.type,
-        body.message.media.data,
-        body.message.media.name
-      );
-
-      await client.sendMessage(body.chat_id, media);
+    if (!body?.body && !request.file) {
+      return response
+        .status(400)
+        .json({ error: "Nenhuma mensagem ou arquivo enviado" });
     }
 
-    if (body.message.text && body.message.media) {
-      const media = new MessageMedia(
-        body.message.media.type,
-        body.message.media.data,
-        body.message.media.name
-      );
+    try {
+      if (body.body && !request.file) {
+        console.log("Heya");
+        await client.sendMessage(body.chat_id, body.body);
+      }
 
-      await client.sendMessage(body.chat_id, body.message.text, {
-        media,
-      });
+      if (!body.body && request.file) {
+        const media = new MessageMedia(
+          request.file.mimetype,
+          request.file.buffer.toString("base64"),
+          request.file.originalname
+        );
+
+        await client.sendMessage(body.chat_id, media);
+      }
+
+      if (body.body && request.file) {
+        const media = new MessageMedia(
+          request.file.mimetype,
+          request.file.buffer.toString("base64"),
+          request.file.originalname
+        );
+
+        await client.sendMessage(body.chat_id, body.body, { media });
+      }
+
+      response.status(201).json({ status: "ok" });
+    } catch (err) {
+      console.error(err);
+      response.status(500).json({ error: "Erro ao enviar mensagem" });
     }
-  } catch (err) {
-    console.log(err);
   }
-
-  response.status(201).end();
-});
+);
 
 export default router;
