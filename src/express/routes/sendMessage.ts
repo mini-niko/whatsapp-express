@@ -8,19 +8,12 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 type PostBody = {
   chat_id: string;
-  message: {
-    text?: string;
-    media?: {
-      type: string;
-      data: string;
-      name: string;
-    };
-  };
+  body?: string;
 };
 
 router.post(
   "/",
-  upload.single("attachment"),
+  upload.single("file"),
   async (request: Request, response: Response) => {
     const client: WhatsappClient = request.app.locals.whatsappClient;
 

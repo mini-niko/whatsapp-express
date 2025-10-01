@@ -4,7 +4,7 @@ import router from "./routes";
 import { whenExpressListening } from "./helpers";
 import { WhatsappClient } from "../whatsapp/type";
 
-async function setup(whatsappClient: WhatsappClient) {
+async function setup(whatsappClient: WhatsappClient | void) {
   console.log("[Express] Iniciando...");
 
   const app = express();
@@ -14,7 +14,7 @@ async function setup(whatsappClient: WhatsappClient) {
   app.use(express.json());
   app.use("/api/", router);
 
-  app.listen(process.env.EXPRESS_PORT, whenExpressListening);
+  app.listen(Number(process.env.EXPRESS_PORT), "0.0.0.0", whenExpressListening);
 }
 
 const expressModule = {
